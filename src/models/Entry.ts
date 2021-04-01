@@ -1,6 +1,7 @@
 import Translation from './Translation'
 
-export default interface Category {
-  name: string
+export default interface Entry {
+  key: string
+  comment: string
   translations: Translation[]
 }

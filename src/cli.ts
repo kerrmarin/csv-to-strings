@@ -32,15 +32,23 @@ try {
 
   const csvToStrings = new CSVToStrings(platform, data)
   csvToStrings.exec((output, format) => {
-    const outPath =
-      program.out || path.join(path.dirname(inPath), `translations.${format}`)
+    for (const stringsFile of output) {
+      const outPath = path.join(
+        path.dirname(inPath),
+        'translations',
+        `${stringsFile.languageCode}.lproj`
+      )
+      fs.mkdirSync(outPath, { recursive: true })
+      fs.writeFileSync(
+        path.join(outPath, `Localizable.${format}`),
+        stringsFile.contents
+      )
 
-    fs.writeFileSync(outPath, output)
-
-    console.log(
-      chalk`\r\n\t{bold.green Success}: .strings file successfully generated.\r\n` +
-        `\tPath of the generated file: ${outPath}\r\n`
-    )
+      console.log(
+        chalk`\r\n\t{bold.green Success}: .strings file successfully generated.\r\n` +
+          `\tPath of the generated file: ${outPath}\r\n`
+      )
+    }
   })
 } catch (e) {
   if (e instanceof InvalidPlatformError) {

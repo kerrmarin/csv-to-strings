@@ -1,17 +1,17 @@
 import CSVParser from 'csv-parser'
 import { Readable } from 'stream'
 
-import Category from '../models/Category'
+import Entry from '../models/Entry'
 import Translation from '../models/Translation'
 
 import Compiler from '../models/Compiler'
-import AndroidCompiler from '../compilers/AndroidCompiler'
 import IOSCompiler from '../compilers/IOSCompiler'
 
 import InvalidPlatformError from '../errors/InvalidPlatformError'
+import StringsFile from '../models/StringsFile'
 
 export default class CSVToStrings {
-  private categories: Category[] = []
+  private entries: Entry[] = []
   private csvData: string
   private compiler: Compiler
 
@@ -19,10 +19,6 @@ export default class CSVToStrings {
     this.csvData = csvData
 
     switch (platform) {
-      case 'android':
-        this.compiler = new AndroidCompiler()
-        break
-
       case 'ios':
         this.compiler = new IOSCompiler()
         break
@@ -32,56 +28,27 @@ export default class CSVToStrings {
     }
   }
 
-  public exec(callback: (output: string, format: string) => void): void {
+  public exec(callback: (output: StringsFile[], format: string) => void): void {
     Readable.from(this.csvData)
-      .pipe(
-        CSVParser({
-          headers: ['Category', 'Base', 'Translation'],
-          skipLines: 1,
-        })
-      )
+      .pipe(CSVParser({ skipLines: 1 }))
       .on('data', (data) => this.parse(data))
       .on('end', () => this.outputFile(callback))
   }
 
-  private parse(data: {
-    Category: string
-    Base: string
-    Translation: string
-  }): void {
-    if (
-      !('Category' in data) ||
-      !('Base' in data) ||
-      !('Translation' in data)
-    ) {
-      // Could not parse line correctly, ignore
-      return
-    }
+  private parse(data: any): void {
+    const { Key, Comment, ...translations } = data
 
-    let categoryIndex = this.categories.findIndex((category) => {
-      return category.name === data.Category
-    })
-
-    if (categoryIndex === -1) {
-      const category: Category = {
-        name: data.Category,
-        translations: [],
+    const trans: Translation[] = Object.entries(translations).map(
+      ([key, value]) => {
+        return { languageCode: key.toLowerCase(), translation: value as string }
       }
-
-      this.categories.push(category)
-
-      categoryIndex = this.categories.length - 1
-    }
-
-    const translation: Translation = {
-      base: data.Base,
-      translation: data.Translation,
-    }
-
-    this.categories[categoryIndex].translations.push(translation)
+    )
+    this.entries.push({ key: Key, comment: Comment, translations: trans })
   }
 
-  private outputFile(callback: (output: string, format: string) => void): void {
-    callback(this.compiler.compile(this.categories), this.compiler.outputFormat)
+  private outputFile(
+    callback: (output: StringsFile[], format: string) => void
+  ): void {
+    callback(this.compiler.compile(this.entries), this.compiler.outputFormat)
   }
 }

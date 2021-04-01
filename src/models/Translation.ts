@@ -1,4 +1,4 @@
 export default interface Translation {
-  base: string
+  languageCode: string
   translation: string
 }

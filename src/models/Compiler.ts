@@ -1,6 +1,7 @@
-import Category from '../models/Category'
+import Entry from './Entry'
+import StringsFile from './StringsFile'
 
 export default interface Compiler {
   outputFormat: string
-  compile(categories: Category[]): string
+  compile(categories: Entry[]): StringsFile[]
 }
