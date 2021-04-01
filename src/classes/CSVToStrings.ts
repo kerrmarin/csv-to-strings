@@ -38,11 +38,14 @@ export default class CSVToStrings {
   private parse(data: any): void {
     const { Key, Comment, ...translations } = data
 
-    const trans: Translation[] = Object.entries(translations).map(
-      ([key, value]) => {
+    const trans: Translation[] = Object.entries(translations)
+      .filter(([key, value]) => {
+        const translation = value as string
+        return translation.length != 0
+      })
+      .map(([key, value]) => {
         return { languageCode: key.toLowerCase(), translation: value as string }
-      }
-    )
+      })
     this.entries.push({ key: Key, comment: Comment, translations: trans })
   }
 
