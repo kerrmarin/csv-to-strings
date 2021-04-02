@@ -1,5 +1,6 @@
 import CSVParser from 'csv-parser'
 import { Readable } from 'stream'
+import stripBom from 'strip-bom'
 
 import Entry from '../models/Entry'
 import Translation from '../models/Translation'
@@ -16,7 +17,7 @@ export default class CSVToStrings {
   private compiler: Compiler
 
   constructor(platform: string, csvData: string) {
-    this.csvData = csvData
+    this.csvData = stripBom(csvData)
 
     switch (platform) {
       case 'ios':
@@ -30,7 +31,7 @@ export default class CSVToStrings {
 
   public exec(callback: (output: StringsFile[], format: string) => void): void {
     Readable.from(this.csvData)
-      .pipe(CSVParser({ skipLines: 1 }))
+      .pipe(CSVParser())
       .on('data', (data) => this.parse(data))
       .on('end', () => this.outputFile(callback))
   }
@@ -52,6 +53,16 @@ export default class CSVToStrings {
   private outputFile(
     callback: (output: StringsFile[], format: string) => void
   ): void {
-    callback(this.compiler.compile(this.entries), this.compiler.outputFormat)
+    const orderedEntries = this.entries
+    orderedEntries.sort((a, b) => {
+      if (a.key < b.key) {
+        return -1
+      }
+      if (a.key > b.key) {
+        return 1
+      }
+      return 0
+    })
+    callback(this.compiler.compile(orderedEntries), this.compiler.outputFormat)
   }
 }

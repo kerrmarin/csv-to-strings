@@ -25,6 +25,7 @@
     "chalk": "4.1.0",
     "commander": "6.2.1",
     "csv-parser": "3.0.0",
+    "strip-bom": "^4.0.0",
     "tslib": "2.1.0"
   },
   "devDependencies": {
